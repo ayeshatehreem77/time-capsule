@@ -19,14 +19,13 @@ export class User extends Document {
   @Prop({ default: false })
   isVerified: boolean;
 
-  @Prop({ type: String, default: null }) // OTP is a string
-  otp: string | null;
+  @Prop({ type: String, default: null })
+  otp?: string | null;
 
-  @Prop({ type: Date, default: null }) // OTP expiry
-  otpExpiry: Date | null;
+  @Prop({ default: null })
+  otpExpiry?: Date | null;
+
+
 }
-
-
-
 
 export const UserSchema = SchemaFactory.createForClass(User);
