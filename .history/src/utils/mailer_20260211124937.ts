@@ -1,8 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
-
-
 export const createMailer = (configService: ConfigService) => {
   return nodemailer.createTransport({
     service: 'gmail',

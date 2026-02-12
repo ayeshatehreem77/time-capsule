@@ -33,7 +33,6 @@ export class AuthService {
             isVerified: false,
         });
 
-
         const mailer = createMailer(this.configService);
 
         await mailer.sendMail({
@@ -74,10 +73,6 @@ export class AuthService {
         const user = await this.usersService.findByEmail(email);
         if (!user) throw new BadRequestException('Invalid credentials');
 
-        if (!user.isVerified) {
-            throw new BadRequestException('Please verify your email first');
-        }
-
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new BadRequestException('Invalid credentials');
 
@@ -86,5 +81,4 @@ export class AuthService {
 
         return { accessToken: token };
     }
-
 }
