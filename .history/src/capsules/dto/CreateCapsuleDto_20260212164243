@@ -1,0 +1,14 @@
+import { IsNotEmpty, IsString } from 'class-validator';
+
+
+export class CreateCapsuleDto {
+  @IsString()
+  @IsNotEmpty()
+  message!: string;
+
+  @IsString()
+  unlockDate!: string;
+
+  passcode?: string;
+}
+

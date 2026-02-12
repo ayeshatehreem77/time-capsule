@@ -15,7 +15,7 @@ export class CapsulesService {
     constructor(
         @InjectModel(Capsule.name)
         private capsuleModel: Model<CapsuleDocument>,
-    ) { }
+    ) {  console.log('ENCRYPTION_SECRET:', this.configService.get('ENCRYPTION_SECRET'));}
 
     async create(data: CreateCapsuleDto, userId: string, file?: Express.Multer.File): Promise<CapsuleDocument> {
         if (new Date(data.unlockDate) <= new Date()) {

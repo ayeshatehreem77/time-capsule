@@ -45,19 +45,15 @@ export class CapsulesService {
             hashedPasscode = await bcrypt.hash(passcode, 10);
         }
 
-        const capsuleData: DeepPartial<Capsule> = {
-            title: rest.title,
-            recipientEmail: rest.recipientEmail,
-            unlockDate: new Date(rest.unlockDate), // convert to Date
+        // Here we just pass the object to Mongoose; no need to cast to Capsule
+        const capsule = await this.capsuleModel.create({
+            ...rest,
             message: encryptedMessage,
             passcode: hashedPasscode,
-            owner: userId as any, // Typescript expects ObjectId, not string
+            owner: userId,
             fileUrl,
-            publicId,
-        };
-
-        const capsule = await this.capsuleModel.create(capsuleData);
-
+            publicId,   // now TS won't complain
+        } as DeepPartial<Capsule>);
 
         return capsule;
     }

@@ -13,7 +13,7 @@ export class AuthService {
         private usersService: UsersService,
         private jwtService: JwtService,
         private configService: ConfigService,
-    ) {  }
+    ) {  console.log('Auth ENCRYPTION_SECRET:', this.configService.get('ENCRYPTION_SECRET')); }
 
     async register(name: string, email: string, password: string) {
         const existingUser = await this.usersService.findByEmail(email);

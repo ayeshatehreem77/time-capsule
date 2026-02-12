@@ -1,5 +1,5 @@
 
-import { Patch, Param, Get, Query, Delete } from '@nestjs/common';
+import { Param, Get, Query } from '@nestjs/common';
 import {
     Controller,
     Post,
@@ -15,7 +15,6 @@ import { CapsulesService } from './capsules.service';
 import { v2 as cloudinary } from 'cloudinary';
 import { ConfigService } from '@nestjs/config';
 import { Readable } from 'stream';
-import { CreateCapsuleDto } from './dto/create-capsule.dto'
 
 @Controller('capsules')
 export class CapsulesController {
@@ -35,7 +34,7 @@ export class CapsulesController {
     @UseInterceptors(FileInterceptor('file'))
     async create(
         @UploadedFile() file: Express.Multer.File,
-        @Body() createCapsuleDto: CreateCapsuleDto,
+        @Body() body: any,
         @Req() req: any,
     ) {
         let fileUrl = '';
@@ -60,7 +59,7 @@ export class CapsulesController {
         }
 
         return this.capsulesService.create(
-            { ...createCapsuleDto, fileUrl }, // ✅ send url
+            { ...body, fileUrl },
             req.user.userId,
         );
     }
@@ -72,25 +71,6 @@ export class CapsulesController {
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @Patch(':id')
-    updateCapsule(
-        @Param('id') id: string,
-        @Body() body: any,
-        @Req() req: any,
-    ) {
-        return this.capsulesService.update(id, body, req.user.userId);
-    }
-
-    @UseGuards(AuthGuard('jwt'))
-    @Delete(':id')
-    deleteCapsule(
-        @Param('id') id: string,
-        @Req() req: any,
-    ) {
-        return this.capsulesService.delete(id, req.user.userId);
-    }
-
-    @UseGuards(AuthGuard('jwt'))
     @Get(':id')
     openCapsule(
         @Param('id') id: string,
@@ -99,6 +79,9 @@ export class CapsulesController {
     ) {
         return this.capsulesService.open(id, req.user.userId, passcode);
     }
+
+
+
 
 
 }

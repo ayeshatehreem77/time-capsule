@@ -15,7 +15,6 @@ import { CapsulesService } from './capsules.service';
 import { v2 as cloudinary } from 'cloudinary';
 import { ConfigService } from '@nestjs/config';
 import { Readable } from 'stream';
-import { CreateCapsuleDto } from './dto/create-capsule.dto'
 
 @Controller('capsules')
 export class CapsulesController {
@@ -35,7 +34,7 @@ export class CapsulesController {
     @UseInterceptors(FileInterceptor('file'))
     async create(
         @UploadedFile() file: Express.Multer.File,
-        @Body() createCapsuleDto: CreateCapsuleDto,
+        @Body() body: any,
         @Req() req: any,
     ) {
         let fileUrl = '';
@@ -60,7 +59,7 @@ export class CapsulesController {
         }
 
         return this.capsulesService.create(
-            { ...createCapsuleDto, fileUrl }, // ✅ send url
+            { ...body, fileUrl },
             req.user.userId,
         );
     }
@@ -100,5 +99,5 @@ export class CapsulesController {
         return this.capsulesService.open(id, req.user.userId, passcode);
     }
 
-
+    
 }

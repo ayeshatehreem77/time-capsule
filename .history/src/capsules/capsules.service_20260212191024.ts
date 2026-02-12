@@ -8,14 +8,15 @@ import { decrypt } from '../utils/encryption';
 import * as bcrypt from 'bcrypt';
 import { CreateCapsuleDto } from './dto/create-capsule.dto'
 import { DeepPartial } from 'mongoose';
+import { ConfigService } from '@nestjs/config';
 
 
 @Injectable()
 export class CapsulesService {
     constructor(
         @InjectModel(Capsule.name)
-        private capsuleModel: Model<CapsuleDocument>,
-    ) { }
+        private capsuleModel: Model<CapsuleDocument>, private configService: ConfigService,
+    ) {  console.log('ENCRYPTION_SECRET:', this.configService.get('ENCRYPTION_SECRET'));}
 
     async create(data: CreateCapsuleDto, userId: string, file?: Express.Multer.File): Promise<CapsuleDocument> {
         if (new Date(data.unlockDate) <= new Date()) {

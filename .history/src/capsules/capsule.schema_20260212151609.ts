@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
-export type CapsuleDocument = HydratedDocument<Capsule>;
+export type CapsuleDocument = Capsule & Document;
 
 @Schema({ timestamps: true })
 export class Capsule {
@@ -13,7 +13,7 @@ export class Capsule {
   message: string;
 
   @Prop()
-  fileUrl: string;
+  fileUrl: string; // image or video link (Cloudinary later)
 
   @Prop({ required: true })
   unlockDate: Date;
@@ -36,8 +36,6 @@ export class Capsule {
   @Prop()
   deletedAt?: Date;
 
-  @Prop()
-  publicId: string;
 }
 
 export const CapsuleSchema = SchemaFactory.createForClass(Capsule);

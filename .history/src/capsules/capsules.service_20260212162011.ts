@@ -6,8 +6,6 @@ import { v2 as cloudinary } from 'cloudinary';
 import { encrypt } from '../utils/encryption';
 import { decrypt } from '../utils/encryption';
 import * as bcrypt from 'bcrypt';
-import { CreateCapsuleDto } from './dto/create-capsule.dto'
-import { DeepPartial } from 'mongoose';
 
 
 @Injectable()
@@ -17,7 +15,7 @@ export class CapsulesService {
         private capsuleModel: Model<CapsuleDocument>,
     ) { }
 
-    async create(data: CreateCapsuleDto, userId: string, file?: Express.Multer.File): Promise<CapsuleDocument> {
+    async create(data: any, userId: string, file?: Express.Multer.File) {
         if (new Date(data.unlockDate) <= new Date()) {
             throw new BadRequestException('Unlock date must be in the future');
         }
@@ -27,42 +25,32 @@ export class CapsulesService {
 
         if (file) {
             const result = await cloudinary.uploader.upload(file.path);
+
             fileUrl = result.secure_url;
             publicId = result.public_id;
         }
 
-        const { message, passcode, ...rest } = data;
+        let hashedPasscode = '';
 
-        if (!message) {
-            throw new BadRequestException('Message is required');
+        if (data.passcode) {
+            hashedPasscode = await bcrypt.hash(data.passcode, 10);
         }
+
+        const { message, ...rest } = data;
 
         const encryptedMessage = encrypt(message);
 
-        let hashedPasscode = undefined;
-
-        if (passcode) {
-            hashedPasscode = await bcrypt.hash(passcode, 10);
-        }
-
-        const capsuleData: DeepPartial<Capsule> = {
-            title: rest.title,
-            recipientEmail: rest.recipientEmail,
-            unlockDate: new Date(rest.unlockDate), // convert to Date
+        const capsule = await this.capsuleModel.create({
+            ...rest,
             message: encryptedMessage,
-            passcode: hashedPasscode,
-            owner: userId as any, // Typescript expects ObjectId, not string
+            owner: userId,
             fileUrl,
             publicId,
-        };
-
-        const capsule = await this.capsuleModel.create(capsuleData);
+        });
 
 
         return capsule;
     }
-
-
 
     async open(id: string, userId: string, passcode?: string) {
         const capsule = await this.capsuleModel.findOne({
@@ -95,19 +83,11 @@ export class CapsulesService {
 
         // If passcode exists, verify it
         if (capsule.passcode) {
-            if (!passcode) {
-                throw new BadRequestException('Passcode required');
-            }
-
             const isMatch = await bcrypt.compare(passcode, capsule.passcode);
 
             if (!passcode || !isMatch) {
                 throw new BadRequestException('Invalid passcode');
             }
-        }
-
-        if (!capsule.message) {
-            throw new BadRequestException('No message found');
         }
 
         let originalMessage = '';
@@ -119,11 +99,13 @@ export class CapsulesService {
         }
 
 
-        const capsuleObj = capsule.toObject();
-        capsuleObj.message = originalMessage;
+        capsule.isOpened = true;
+        await capsule.save();
 
-        return capsuleObj;
-
+        return {
+            ...capsule.toObject(),
+            message: originalMessage,
+        };
     }
 
     async getMyCapsules(userId: string) {

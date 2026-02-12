@@ -60,8 +60,9 @@ export class CapsulesController {
         }
 
         return this.capsulesService.create(
-            { ...createCapsuleDto, fileUrl }, // ✅ send url
+            createCapsuleDto,
             req.user.userId,
+            file,
         );
     }
 
