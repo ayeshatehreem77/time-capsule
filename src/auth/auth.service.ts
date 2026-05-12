@@ -53,7 +53,13 @@ export class AuthService {
         });
 
 
-        return { message: 'OTP sent! Check the preview URL in console.' };
+        return {
+            message: 'OTP sent! Check the preview URL in console.',
+            user: {
+                id: user._id,
+                email: user.email
+            }
+        };
     }
 
     async verifyOtp(email: string, otp: string) {
