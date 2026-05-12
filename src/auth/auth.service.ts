@@ -27,7 +27,34 @@ export class AuthService {
     async register(name: string, email: string, password: string) {
         const existingUser = await this.usersService.findByEmail(email);
         if (existingUser) {
-            throw new BadRequestException('Email already exists');
+            if (existingUser.isVerified) {
+                throw new BadRequestException('Email already exists');
+            }
+
+            // update OTP for unverified user
+            const otp = generateOTP();
+
+            existingUser.otp = otp;
+            existingUser.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+            await existingUser.save();
+
+            const mailer = createMailer(this.configService);
+
+            await mailer.sendMail({
+                from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
+                to: email,
+                subject: 'Verify your TimeCapsule account',
+                text: `Your OTP is ${otp}. It expires in 5 minutes.`,
+            });
+
+            return {
+                message: 'OTP resent',
+                user: {
+                    id: existingUser._id,
+                    email: existingUser.email,
+                },
+            };
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
