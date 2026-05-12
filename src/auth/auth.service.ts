@@ -69,15 +69,20 @@ export class AuthService {
             isVerified: false,
         });
 
+        try {
+            const mailer = createMailer(this.configService);
 
-        const mailer = createMailer(this.configService);
+            await mailer.sendMail({
+                from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
+                to: email,
+                subject: 'Verify your TimeCapsule account',
+                text: `Your OTP is ${otp}. It expires in 5 minutes.`,
+            });
+        } catch (err) {
+            console.log("MAIL ERROR:", err);
+        }
 
-        await mailer.sendMail({
-            from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
-            to: email,
-            subject: 'Verify your TimeCapsule account',
-            text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-        });
+
 
 
         return {
@@ -103,6 +108,8 @@ export class AuthService {
         }
 
 
+
+
         user.isVerified = true;
         user.otp = null;
         user.otpExpiry = null;
@@ -113,6 +120,7 @@ export class AuthService {
 
 
     async login(email: string, password: string) {
+
         const user = await this.usersService.findByEmail(email);
         if (!user) throw new BadRequestException('Invalid credentials');
 
@@ -128,6 +136,7 @@ export class AuthService {
         if (!isMatch) throw new BadRequestException('Invalid credentials');
 
         const payload = { sub: user._id, role: user.role };
+        console.log("JWT SECRET:", process.env.JWT_SECRET);
         const token = this.jwtService.sign(payload);
 
         await this.logModel.create({
