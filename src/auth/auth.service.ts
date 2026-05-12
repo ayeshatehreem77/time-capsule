@@ -69,18 +69,18 @@ export class AuthService {
             isVerified: false,
         });
 
-        try {
-            const mailer = createMailer(this.configService);
+        // try {
+        //     const mailer = createMailer(this.configService);
 
-            await mailer.sendMail({
-                from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
-                to: email,
-                subject: 'Verify your TimeCapsule account',
-                text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-            });
-        } catch (err) {
-            console.log("MAIL ERROR:", err);
-        }
+        //     await mailer.sendMail({
+        //         from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
+        //         to: email,
+        //         subject: 'Verify your TimeCapsule account',
+        //         text: `Your OTP is ${otp}. It expires in 5 minutes.`,
+        //     });
+        // } catch (err) {
+        //     console.log("MAIL ERROR:", err);
+        // }
 
 
 
