@@ -29,111 +29,147 @@ export class CapsulesService {
     ) { }
 
     async create(data: any, userId: string): Promise<any> {
+ 
+  const user = await this.usersService.findById(userId);
 
-        const user = await this.usersService.findById(userId);
+  if (!user) {
+    throw new BadRequestException('User not found');
+  }
 
-        if (!user) {
-            throw new BadRequestException('User not found');
-        }
-        if (
-            user.plan !== 'starter' &&
-            user.planExpiresAt &&
-            user.planExpiresAt < new Date()
-        ) {
-            user.plan = 'starter';
-            user.planExpiresAt = null;
-            await user.save();
+  if (
+    user.plan !== 'starter' &&
+    user.planExpiresAt &&
+    user.planExpiresAt < new Date()
+  ) {
+    user.plan = 'starter';
+    user.planExpiresAt = null;
 
-            console.log("🔄 USER DOWNGRADED TO STARTER");
-        }
+    await user.save();
 
-        if (new Date(data.unlockDate) <= new Date()) {
-            throw new BadRequestException('Unlock date must be in the future');
-        }
+    console.log('🔄 USER DOWNGRADED TO STARTER');
+  }
 
-        const { message, passcode, fileUrl, ...rest } = data;
+  if (!data.unlockDate) {
+    throw new BadRequestException('Unlock date is required');
+  }
 
-        if (!message) {
-            throw new BadRequestException('Message is required');
-        }
+  if (new Date(data.unlockDate) <= new Date()) {
+    throw new BadRequestException(
+      'Unlock date must be in the future',
+    );
+  }
 
-        const encryptedMessage = encrypt(message);
+  if (!data.message?.trim()) {
+    throw new BadRequestException('Message is required');
+  }
 
-        let hashedPasscode = undefined;
-        if (passcode) {
-            hashedPasscode = await bcrypt.hash(passcode, 10);
-        }
+  if (user.plan === 'starter') {
+    const capsuleCount =
+      await this.capsuleModel.countDocuments({
+        owner: userId,
+        isDeleted: false,
+      });
 
-        const recipientEmail = rest.recipientEmail?.trim() || null;
-
-        const generatedPublicId = nanoid(10);
-
-        const isSealed = data.isSealed ?? false;
-
-        const capsuleData: any = {
-            title: rest.title,
-            recipientEmail,
-            unlockDate: new Date(rest.unlockDate),
-            message: encryptedMessage,
-            passcode: hashedPasscode,
-            owner: userId,
-            fileUrl: fileUrl || '',
-            publicId: generatedPublicId,
-            deliveryType: recipientEmail ? 'sent' : 'self',
-            deliveryStatus: recipientEmail ? 'pending' : 'delivered',
-            isSealed,
-        };
-
-        const capsule = await this.capsuleModel.create(capsuleData);
-
-        //  SEND BURIAL EMAILS (FIXED POSITION)
-        if (isSealed && recipientEmail) {
-            const sender = await this.usersService.findById(userId);
-
-            if (sender) {
-                await this.mailerService.sendBurialToReceiverEmail(
-                    recipientEmail,
-                    sender.name,
-                    capsule.title,
-                    capsule.unlockDate,
-                );
-
-                await this.mailerService.sendBurialToSenderEmail(
-                    sender.email,
-                    recipientEmail,
-                    capsule.title,
-                    capsule.unlockDate,
-                );
-            }
-        }
-
-
-
-        if (user?.plan === 'starter') {
-            const capsuleCount =
-                await this.capsuleModel.countDocuments({
-                    owner: userId, // ✅ correct field
-                });
-
-            if (capsuleCount >= 5) {
-                throw new BadRequestException(
-                    'Starter plan allows only 5 capsules',
-                );
-            }
-        }
-
-
-        this.gateway.sendNotification(userId, {
-            type: 'CAPSULE_SENT',
-            message: 'You have sent a capsule',
-        });
-
-        // ✅ RETURN AFTER EMAILS
-        return {
-            capsule,
-            publicLink: `${process.env.BACKEND_URL}/capsules/public/${generatedPublicId}`,
-        };
+    if (capsuleCount >= 5) {
+      throw new BadRequestException(
+        'Starter plan allows only 5 capsules',
+      );
     }
+  }
+
+  const {
+    message,
+    passcode,
+    fileUrl,
+    recipientEmail,
+    ...rest
+  } = data;
+
+  const encryptedMessage = encrypt(message);
+
+  let hashedPasscode: string | undefined;
+
+  if (passcode) {
+    hashedPasscode = await bcrypt.hash(passcode, 10);
+  }
+
+  const cleanedRecipient =
+    recipientEmail?.trim() || null;
+
+  const generatedPublicId = nanoid(10);
+
+  const isSealed = data.isSealed ?? false;
+
+  const capsule = await this.capsuleModel.create({
+    title: rest.title,
+    recipientEmail: cleanedRecipient,
+    unlockDate: new Date(data.unlockDate),
+    message: encryptedMessage,
+    passcode: hashedPasscode,
+    owner: userId,
+    fileUrl: fileUrl || '',
+    publicId: generatedPublicId,
+
+    deliveryType: cleanedRecipient
+      ? 'sent'
+      : 'self',
+
+    deliveryStatus: cleanedRecipient
+      ? 'pending'
+      : 'delivered',
+
+    isSealed,
+  });
+
+  if (isSealed && cleanedRecipient) {
+    try {
+      await Promise.all([
+        this.mailerService.sendBurialToReceiverEmail(
+          cleanedRecipient,
+          user.name,
+          capsule.title,
+          capsule.unlockDate,
+        ),
+
+        this.mailerService.sendBurialToSenderEmail(
+          user.email,
+          cleanedRecipient,
+          capsule.title,
+          capsule.unlockDate,
+        ),
+      ]);
+    } catch (error) {
+      console.error(
+        '📧 Email delivery failed:',
+        error,
+      );
+    }
+  }
+
+  try {
+    if (cleanedRecipient) {
+      this.gateway.sendNotification(userId, {
+        type: 'CAPSULE_SENT',
+        message: `Capsule "${capsule.title}" sent successfully`,
+      });
+    }
+  } catch (error) {
+    console.error(
+      '🔔 Notification failed:',
+      error,
+    );
+  }
+
+  return {
+    success: true,
+
+    message: 'Capsule created successfully',
+
+    capsule,
+
+    publicLink: `${process.env.BACKEND_URL}/capsules/public/${generatedPublicId}`,
+  };
+}
 
 
 
