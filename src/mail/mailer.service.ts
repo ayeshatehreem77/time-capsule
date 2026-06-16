@@ -88,13 +88,14 @@ export class MailerService {
     unlockDate: Date,
   ) {
     const formattedDate = new Date(unlockDate).toLocaleString('en-PK', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+  timeZone: 'Asia/Karachi',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
 
     return this.sendEmail(
       to,
@@ -110,13 +111,14 @@ export class MailerService {
     unlockDate: Date,
   ) {
     const formattedDate = new Date(unlockDate).toLocaleString('en-PK', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+  timeZone: 'Asia/Karachi',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
 
     return this.sendEmail(
       to,
