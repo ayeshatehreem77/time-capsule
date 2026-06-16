@@ -3,7 +3,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
-import { createMailer } from '../utils/mailer';
+// import { createMailer } from '../utils/mailer';
 import { generateOTP } from './otp.util';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,6 +11,7 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from '../users/user.schema';
 import { NotFoundException } from '@nestjs/common';
 import { Log } from '../admin/schemas/log.schema';
+import { MailerService } from '../mail/mailer.service';
 
 
 @Injectable()
@@ -22,6 +23,7 @@ export class AuthService {
         private configService: ConfigService,
         @InjectModel(User.name)
         private userModel: Model<UserDocument>,
+        private readonly mailerService: MailerService,
     ) { }
 
     async register(name: string, email: string, password: string) {
@@ -39,14 +41,12 @@ export class AuthService {
 
             await existingUser.save();
 
-            const mailer = createMailer(this.configService);
+            
 
-            await mailer.sendMail({
-                from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
-                to: email,
-                subject: 'Verify your TimeCapsule account',
-                text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-            });
+           await this.mailerService.sendOtpEmail(
+  email,
+  otp,
+);
 
             return {
                 message: 'OTP resent',
@@ -70,14 +70,10 @@ export class AuthService {
         });
 
         try {
-            const mailer = createMailer(this.configService);
-
-            await mailer.sendMail({
-                from: `"TimeCapsule" <${this.configService.get('EMAIL_USER')}>`,
-                to: email,
-                subject: 'Verify your TimeCapsule account',
-                text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-            });
+            await this.mailerService.sendOtpEmail(
+  email,
+  otp,
+);
         } catch (err) {
             console.log("MAIL ERROR:", err);
         }
