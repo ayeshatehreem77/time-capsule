@@ -18,6 +18,13 @@ export class MailerService {
         pass: this.config.get('EMAIL_PASS'),
       },
     });
+    this.transporter.verify((error, success) => {
+  if (error) {
+    console.error('SMTP ERROR:', error);
+  } else {
+    console.log('SMTP READY');
+  }
+});
   }
 
   async sendCapsuleSentEmail(to: string, capsuleTitle: string, recipient: string) {
