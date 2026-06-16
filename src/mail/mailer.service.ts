@@ -49,11 +49,20 @@ export class MailerService {
     to: string,
     senderName: string,
     capsuleTitle: string,
+    publicLink: string,
+  passcode: string,
   ) {
     return this.sendEmail(
       to,
       'You received a TimeCapsule 🎁',
-      `${senderName} has sent you a capsule titled "${capsuleTitle}". It will unlock on the scheduled date.`,
+      `${senderName} has sent you a capsule titled "${capsuleTitle}". It will unlock on the scheduled date.
+      Public Link:
+${publicLink}
+
+Unlock Key:
+${passcode}
+
+Keep this key safe. You will need it to open the capsule when it unlocks.`,
     );
   }
 
