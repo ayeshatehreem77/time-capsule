@@ -24,13 +24,13 @@ export class PaymentsController {
   }
 
   @Post('webhook')
-  webhook(
-    @Req() req: any,
-    @Headers('stripe-signature') sig: string,
-  ) {
-    return this.paymentsService.handleWebhook(
-      req,
-      sig,
-    );
-  }
+webhook(
+  @Req() req: any,
+  @Headers('stripe-signature') sig: string,
+) {
+  return this.paymentsService.handleWebhook(
+    req.body,   // raw buffer yahan milega
+    sig,
+  );
+}
 }
