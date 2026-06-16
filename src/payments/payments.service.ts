@@ -68,33 +68,35 @@ export class PaymentsService {
         };
     }
 
-    async handleWebhook(req: any, sig: string) {
+    async handleWebhook(payload: Buffer, sig: string) {
 
-        const endpointSecret =
-            process.env.STRIPE_WEBHOOK_SECRET!;
+    const endpointSecret =
+        process.env.STRIPE_WEBHOOK_SECRET!;
 
-        const event = this.stripe.webhooks.constructEvent(
-            req.rawBody,
-            sig,
-            endpointSecret,
-        );
+    const event = this.stripe.webhooks.constructEvent(
+        payload,
+        sig,
+        endpointSecret,
+    );
 
-        if (event.type === 'checkout.session.completed') {
-            const session: any = event.data.object;
+    if (event.type === 'checkout.session.completed') {
+        const session: any = event.data.object;
 
-            const userId = session.metadata.userId;
-            const plan = session.metadata.plan;
+        const userId = session.metadata.userId;
+        const plan = session.metadata.plan;
 
-            await this.userModel.findByIdAndUpdate(userId, {
-                plan,
-                planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            });
+        await this.userModel.findByIdAndUpdate(userId, {
+            plan,
+            planExpiresAt: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000,
+            ),
+        });
 
-            console.log("✅ PLAN + EXPIRY SET");
-        }
-
-        return {
-            received: true,
-        };
+        console.log('✅ PLAN + EXPIRY SET');
     }
+
+    return {
+        received: true,
+    };
+}
 }
