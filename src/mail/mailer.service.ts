@@ -33,6 +33,17 @@ export class MailerService {
     }
   }
 
+  async sendOtpEmail(
+  to: string,
+  otp: string,
+) {
+  return this.sendEmail(
+    to,
+    'Verify your TimeCapsule account',
+    `Your OTP is ${otp}. It expires in 5 minutes.`,
+  );
+}
+  
   async sendCapsuleSentEmail(
     to: string,
     capsuleTitle: string,
