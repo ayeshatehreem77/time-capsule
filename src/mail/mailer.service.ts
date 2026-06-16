@@ -49,16 +49,14 @@ export class MailerService {
     to: string,
     senderName: string,
     capsuleTitle: string,
-    publicLink: string,
   passcode: string,
   ) {
     return this.sendEmail(
       to,
       'You received a TimeCapsule 🎁',
       `${senderName} has sent you a capsule titled "${capsuleTitle}". It will unlock on the scheduled date.
-      Public Link:
-${publicLink}
-
+Visit:
+${this.config.get('FRONTEND_URL')}
 Unlock Key:
 ${passcode}
 
@@ -74,7 +72,9 @@ Keep this key safe. You will need it to open the capsule when it unlocks.`,
     return this.sendEmail(
       to,
       'Your capsule is unlocked ⏳',
-      `The capsule "${title}" sent by ${senderName} is now unlocked.`,
+      `The capsule "${title}" sent by ${senderName} is now unlocked.
+      Visit:
+${this.config.get('FRONTEND_URL')}`,
     );
   }
 
@@ -95,6 +95,7 @@ Keep this key safe. You will need it to open the capsule when it unlocks.`,
     senderName: string,
     title: string,
     unlockDate: Date,
+    passcode: string,
   ) {
     const formattedDate = new Date(unlockDate).toLocaleString('en-PK', {
   timeZone: 'Asia/Karachi',
@@ -109,7 +110,12 @@ Keep this key safe. You will need it to open the capsule when it unlocks.`,
     return this.sendEmail(
       to,
       'A secret has been buried for you ⏳',
-      `${senderName} has buried a secret capsule for you.\n\nTitle: ${title}\nIt will be revealed on: ${formattedDate}\n\nStay tuned...`,
+      `${senderName} has buried a secret capsule for you.\n\nTitle: ${title}\nIt will be revealed on: ${formattedDate}\n\nStay tuned...
+      Visit:
+${this.config.get('FRONTEND_URL')}
+Unlock Key:
+${passcode}
+Keep this key safe.`,
     );
   }
 
