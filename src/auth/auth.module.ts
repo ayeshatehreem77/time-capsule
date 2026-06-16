@@ -5,6 +5,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy'
+import { MailModule } from '../mail/mail.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../users/user.schema';
 import {Log, LogSchema} from '../admin/schemas/log.schema'
@@ -16,6 +17,7 @@ import {Log, LogSchema} from '../admin/schemas/log.schema'
       { name: Log.name, schema: LogSchema },
     ]),
     UsersModule,
+    MailModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
