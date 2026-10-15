@@ -129,6 +129,7 @@ export class CapsulesService {
           user.name,
           capsule.title,
           capsule.unlockDate,
+            capsule.passcode,
         ),
 
         this.mailerService.sendBurialToSenderEmail(
@@ -510,6 +511,7 @@ export class CapsulesService {
                     sender.name,
                     capsule.title,
                     capsule.unlockDate,
+                    capsule.passcode,
                 );
 
                 await this.mailerService.sendBurialToSenderEmail(

@@ -1,52 +1,78 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailerService {
-  private transporter: nodemailer.Transporter;
-
-
+  private resend: Resend;
 
   constructor(private config: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: this.config.get('EMAIL_USER'),
-        pass: this.config.get('EMAIL_PASS'),
-      },
-    });
-    this.transporter.verify((error, success) => {
-  if (error) {
-    console.error('SMTP ERROR:', error);
-  } else {
-    console.log('SMTP READY');
-  }
-});
+    this.resend = new Resend(
+      this.config.get<string>('RESEND_API_KEY'),
+    );
   }
 
-  async sendCapsuleSentEmail(to: string, capsuleTitle: string, recipient: string) {
-    return this.transporter.sendMail({
-      from: `"TimeCapsule" <${this.config.get('EMAIL_USER')}>`,
+  private async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+  ) {
+    try {
+      const response = await this.resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to,
+        subject,
+        text,
+      });
+
+      console.log('✅ Email sent:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Email delivery failed:', error);
+      throw error;
+    }
+  }
+
+  async sendOtpEmail(
+  to: string,
+  otp: string,
+) {
+  return this.sendEmail(
+    to,
+    'Verify your TimeCapsule account',
+    `Your OTP is ${otp}. It expires in 5 minutes.`,
+  );
+}
+  
+  async sendCapsuleSentEmail(
+    to: string,
+    capsuleTitle: string,
+    recipient: string,
+  ) {
+    return this.sendEmail(
       to,
-      subject: 'Capsule Sent Successfully 📬',
-      text: `Your capsule "${capsuleTitle}" has been sent to ${recipient}.`,
-    });
+      'Capsule Sent Successfully 📬',
+      `Your capsule "${capsuleTitle}" has been sent to ${recipient}.`,
+    );
   }
 
   async sendCapsuleReceivedEmail(
     to: string,
     senderName: string,
     capsuleTitle: string,
+  passcode: string,
   ) {
-    return this.transporter.sendMail({
-      from: `"TimeCapsule" <${this.config.get('EMAIL_USER')}>`,
+    return this.sendEmail(
       to,
-      subject: 'You received a TimeCapsule 🎁',
-      text: `${senderName} has sent you a capsule titled "${capsuleTitle}". It will unlock on the scheduled date.`,
-    });
+      'You received a TimeCapsule 🎁',
+      `${senderName} has sent you a capsule titled "${capsuleTitle}". It will unlock on the scheduled date.
+Visit:
+${this.config.get('FRONTEND_URL')}
+Unlock Key:
+${passcode}
+
+Keep this key safe. You will need it to open the capsule when it unlocks.`,
+    );
   }
 
   async sendUnlockToReceiverEmail(
@@ -54,12 +80,13 @@ export class MailerService {
     senderName: string,
     title: string,
   ) {
-    return this.transporter.sendMail({
-      from: `"TimeCapsule" <${this.config.get('EMAIL_USER')}>`,
+    return this.sendEmail(
       to,
-      subject: 'Your capsule is unlocked ⏳',
-      text: `The capsule "${title}" sent by ${senderName} is now unlocked.`,
-    });
+      'Your capsule is unlocked ⏳',
+      `The capsule "${title}" sent by ${senderName} is now unlocked.
+      Visit:
+${this.config.get('FRONTEND_URL')}`,
+    );
   }
 
   async sendUnlockToSenderEmail(
@@ -67,12 +94,11 @@ export class MailerService {
     recipientEmail: string,
     title: string,
   ) {
-    return this.transporter.sendMail({
-      from: `"TimeCapsule" <${this.config.get('EMAIL_USER')}>`,
+    return this.sendEmail(
       to,
-      subject: 'Capsule Unlocked 🎉',
-      text: `The capsule "${title}" you sent to ${recipientEmail} is now unlocked.`,
-    });
+      'Capsule Unlocked 🎉',
+      `The capsule "${title}" you sent to ${recipientEmail} is now unlocked.`,
+    );
   }
 
   async sendBurialToReceiverEmail(
@@ -80,21 +106,28 @@ export class MailerService {
     senderName: string,
     title: string,
     unlockDate: Date,
+    passcode: string,
   ) {
-
     const formattedDate = new Date(unlockDate).toLocaleString('en-PK', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    return this.transporter.sendMail({
+  timeZone: 'Asia/Karachi',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
+
+    return this.sendEmail(
       to,
-      subject: 'A secret has been buried for you ⏳',
-      text: `${senderName} has buried a secret capsule for you.\n\nTitle: ${title}\nIt will be revealed on: ${unlockDate}\n\nStay tuned...`,
-    });
+      'A secret has been buried for you ⏳',
+      `${senderName} has buried a secret capsule for you.\n\nTitle: ${title}\nIt will be revealed on: ${formattedDate}\n\nStay tuned...
+      Visit:
+${this.config.get('FRONTEND_URL')}
+Unlock Key:
+${passcode}
+Keep this key safe.`,
+    );
   }
 
   async sendBurialToSenderEmail(
@@ -103,19 +136,20 @@ export class MailerService {
     title: string,
     unlockDate: Date,
   ) {
-
     const formattedDate = new Date(unlockDate).toLocaleString('en-PK', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    return this.transporter.sendMail({
+  timeZone: 'Asia/Karachi',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+});
+
+    return this.sendEmail(
       to,
-      subject: 'Your capsule has been buried 🎁',
-      text: `Your capsule "${title}" has been successfully sent to ${recipientEmail}.\n\nIt will be unlocked on: ${unlockDate}.`,
-    });
+      'Your capsule has been buried 🎁',
+      `Your capsule "${title}" has been successfully sent to ${recipientEmail}.\n\nIt will be unlocked on: ${formattedDate}.`,
+    );
   }
 }
