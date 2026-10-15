@@ -8,7 +8,7 @@ This repository contains the backend API built with NestJS and MongoDB. It handl
 
 ## 🌐 Live Demo
 
-[**Explore TimeCapsule**](https://timecapsule-frontend-56v2.vercel.app/)
+[**Explore TimeCapsule**](https://timecapsule-murex.vercel.app/)
 
 ## 🔗 Project Repositories
 
